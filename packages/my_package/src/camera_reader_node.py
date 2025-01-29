@@ -3,7 +3,7 @@
 import os
 import rospy
 from duckietown.dtros import DTROS, NodeType
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, Image
 
 import cv2
 from cv_bridge import CvBridge
@@ -23,12 +23,44 @@ class CameraReaderNode(DTROS):
         cv2.namedWindow(self._window, cv2.WINDOW_AUTOSIZE)
         # construct subscriber
         self.sub = rospy.Subscriber(self._camera_topic, CompressedImage, self.callback)
+        self.pub = rospy.Publisher(
+            f"/{self._vehicle_name}/processed_image",Image,queue_size=1)
 
     def callback(self, msg):
         # convert JPEG bytes to CV image
         image = self._bridge.compressed_imgmsg_to_cv2(msg)
-        # display frame
-        cv2.imshow(self._window, image)
+
+        height, width = image.shape[:2]
+        rospy.loginfo(f"Processing image: {width}x{height}")
+
+        # Convert to grayscale
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Create annotation text
+        annotation_text = (
+            f"Duck {self._vehicle_name} says, 'Cheese! "
+            f"Capturing {width}x{height} - quack-tastic!'"
+        )
+
+        # Add text annotation (white text at position (10, 30))
+        cv2.putText(
+            gray_image,
+            annotation_text,
+            (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            255,  # White color for grayscale
+            2
+        )
+
+        # Convert processed image back to ROS message
+        processed_msg = self._bridge.cv2_to_imgmsg(gray_image, "mono8")
+
+        # Publish processed image
+        self.pub.publish(processed_msg)
+
+        # Display processed image
+        cv2.imshow(self._window, gray_image)
         cv2.waitKey(1)
 
 if __name__ == '__main__':
