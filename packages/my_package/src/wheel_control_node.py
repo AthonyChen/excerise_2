@@ -74,7 +74,7 @@ class WheelControlNode(DTROS):
             if distance_traveled >= distance:
                 stop = WheelsCmdStamped(vel_left=0, vel_right=0)
                 self._publisher.publish(stop)
-                node.stop()
+                break
 
             rospy.loginfo(distance_traveled)
             rospy.loginfo(self._ticks_left)
