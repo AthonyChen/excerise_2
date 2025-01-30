@@ -116,6 +116,8 @@ class DriveDistanceNode(DTROS):
                     self._vel_left = 0
                     self._vel_right = 0
                     rospy.loginfo("Task completed!")
+                    message = WheelsCmdStamped(vel_left=self._vel_left, vel_right=self._vel_right)
+                    self._publisher.publish(message)
                     break
             
             rate.sleep()
