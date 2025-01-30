@@ -2,9 +2,9 @@
 
 import os
 import rospy
+import math
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
-import math
 
 # Constants
 WHEEL_RADIUS = 0.0318  # Radius of the Duckiebot's wheels in meters
@@ -20,20 +20,45 @@ class DriveDistanceNode(DTROS):
         # Initialize the DTROS parent class
         super(DriveDistanceNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
         
-        # Initialize wheel control node
-        self.wheel_control_node = WheelControlNode(node_name='wheel_control_node')
+        # Get vehicle name from environment
+        self._vehicle_name = os.environ['VEHICLE_NAME']
         
-        # Initialize wheel encoder reader node
-        self.encoder_reader_node = WheelEncoderReaderNode(node_name='wheel_encoder_reader_node')
+        # Wheel control parameters
+        self._vel_left = 0.0
+        self._vel_right = 0.0
         
-        # Variables to store encoder ticks
+        # Encoder data storage
+        self._ticks_left = None
+        self._ticks_right = None
         self.initial_ticks_left = None
         self.initial_ticks_right = None
-        self.current_ticks_left = None
-        self.current_ticks_right = None
         
         # Flag to indicate if the bot is moving forward or backward
         self.moving_forward = True
+        
+        # Setup publisher for wheel commands
+        self.wheels_topic = f"/{self._vehicle_name}/wheels_driver_node/wheels_cmd"
+        self._publisher = rospy.Publisher(self.wheels_topic, WheelsCmdStamped, queue_size=1)
+        
+        # Setup subscribers for encoder data
+        self.left_encoder_topic = f"/{self._vehicle_name}/left_wheel_encoder_node/tick"
+        self.right_encoder_topic = f"/{self._vehicle_name}/right_wheel_encoder_node/tick"
+        self.sub_left = rospy.Subscriber(self.left_encoder_topic, WheelEncoderStamped, self.callback_left)
+        self.sub_right = rospy.Subscriber(self.right_encoder_topic, WheelEncoderStamped, self.callback_right)
+
+    def callback_left(self, data):
+        # Log encoder resolution and type once
+        rospy.loginfo_once(f"Left encoder resolution: {data.resolution}")
+        rospy.loginfo_once(f"Left encoder type: {data.type}")
+        # Store encoder ticks
+        self._ticks_left = data.data
+
+    def callback_right(self, data):
+        # Log encoder resolution and type once
+        rospy.loginfo_once(f"Right encoder resolution: {data.resolution}")
+        rospy.loginfo_once(f"Right encoder type: {data.type}")
+        # Store encoder ticks
+        self._ticks_right = data.data
 
     def calculate_distance(self, initial_ticks, current_ticks):
         # Calculate the distance traveled based on encoder ticks
@@ -41,25 +66,31 @@ class DriveDistanceNode(DTROS):
 
     def run(self):
         # Wait for the encoder data to be available
-        while self.encoder_reader_node._ticks_left is None or self.encoder_reader_node._ticks_right is None:
+        while self._ticks_left is None or self._ticks_right is None:
             rospy.sleep(0.1)
         
         # Record initial encoder ticks
-        self.initial_ticks_left = self.encoder_reader_node._ticks_left
-        self.initial_ticks_right = self.encoder_reader_node._ticks_right
+        self.initial_ticks_left = self._ticks_left
+        self.initial_ticks_right = self._ticks_right
         
         # Start moving forward
-        self.wheel_control_node._vel_left = 0.5  # 50% throttle forward
-        self.wheel_control_node._vel_right = 0.5  # 50% throttle forward
+        self._vel_left = 0.5  # 50% throttle forward
+        self._vel_right = 0.5  # 50% throttle forward
         
+        # Publish wheel commands at 10 Hz
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
+            # Publish wheel commands
+            message = WheelsCmdStamped(vel_left=self._vel_left, vel_right=self._vel_right)
+            self._publisher.publish(message)
+            
             # Update current encoder ticks
-            self.current_ticks_left = self.encoder_reader_node._ticks_left
-            self.current_ticks_right = self.encoder_reader_node._ticks_right
+            current_ticks_left = self._ticks_left
+            current_ticks_right = self._ticks_right
             
             # Calculate distance traveled
-            distance_left = self.calculate_distance(self.initial_ticks_left, self.current_ticks_left)
-            distance_right = self.calculate_distance(self.initial_ticks_right, self.current_ticks_right)
+            distance_left = self.calculate_distance(self.initial_ticks_left, current_ticks_left)
+            distance_right = self.calculate_distance(self.initial_ticks_right, current_ticks_right)
             distance_traveled = (distance_left + distance_right) / 2  # Average distance
             
             rospy.loginfo(f"Distance traveled: {distance_traveled:.2f} meters")
@@ -67,27 +98,34 @@ class DriveDistanceNode(DTROS):
             if self.moving_forward:
                 if distance_traveled >= TARGET_DISTANCE:
                     # Stop the bot and prepare to move backward
-                    self.wheel_control_node._vel_left = 0
-                    self.wheel_control_node._vel_right = 0
+                    self._vel_left = 0
+                    self._vel_right = 0
                     rospy.sleep(1)  # Wait for 1 second
                     
                     # Record new initial ticks for backward movement
-                    self.initial_ticks_left = self.encoder_reader_node._ticks_left
-                    self.initial_ticks_right = self.encoder_reader_node._ticks_right
+                    self.initial_ticks_left = self._ticks_left
+                    self.initial_ticks_right = self._ticks_right
                     
                     # Start moving backward
-                    self.wheel_control_node._vel_left = -0.5  # 50% throttle backward
-                    self.wheel_control_node._vel_right = -0.5  # 50% throttle backward
+                    self._vel_left = -0.5  # 50% throttle backward
+                    self._vel_right = -0.5  # 50% throttle backward
                     self.moving_forward = False
             else:
                 if distance_traveled >= TARGET_DISTANCE:
                     # Stop the bot
-                    self.wheel_control_node._vel_left = 0
-                    self.wheel_control_node._vel_right = 0
+                    self._vel_left = 0
+                    self._vel_right = 0
                     rospy.loginfo("Task completed!")
+                    message = WheelsCmdStamped(vel_left=self._vel_left, vel_right=self._vel_right)
+                    self._publisher.publish(message)
                     break
             
-            rospy.sleep(0.1)
+            rate.sleep()
+
+    def on_shutdown(self):
+        # Stop the bot when the node is shut down
+        stop_message = WheelsCmdStamped(vel_left=0, vel_right=0)
+        self._publisher.publish(stop_message)
 
 if __name__ == '__main__':
     # Create the node
