@@ -67,11 +67,17 @@ class WheelControlNode(DTROS):
         distance_traveled = 0
         rospy.loginfo(self._ticks_left)
         message = WheelsCmdStamped(vel_left=self._vel_left, vel_right=self._vel_right)
+        bool1 = False
         while not rospy.is_shutdown():
             if self._ticks_right is not None and self._ticks_left is not None:
                 distance_traveled = (2 * 3.14159 * 0.0318 * self._ticks_left) / 135
 
             if distance_traveled >= distance:
+
+                message = WheelsCmdStamped(vel_left=-0.5, vel_right=-0.5)
+                self._publisher.publish(message)
+                bool1 = True
+            if distance_traveled <= 0 and bool1:
                 stop = WheelsCmdStamped(vel_left=0, vel_right=0)
                 self._publisher.publish(stop)
                 break
@@ -81,10 +87,24 @@ class WheelControlNode(DTROS):
             self._publisher.publish(message)
             rate.sleep()
 
+        self.stop_robot()
+
     def on_shutdown(self):
         stop = WheelsCmdStamped(vel_left=0, vel_right=0)
         self._publisher.publish(stop)
 
+    def stop_robot(self):
+        """ Stop the Duckiebot and shut down subscribers """
+        stop_command = WheelsCmdStamped(vel_left=0, vel_right=0)
+        self._publisher.publish(stop_command)
+        rospy.loginfo("Robot stopped.")
+
+        # Unsubscribe from topics to prevent lingering processes
+        self.sub_left.unregister()
+        self.sub_right.unregister()
+
+        # Shutdown ROS properly
+        rospy.signal_shutdown("Task completed, shutting down.")
 
 if __name__ == '__main__':
     # create the node
