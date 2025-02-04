@@ -6,9 +6,9 @@ from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
 
 # throttle and direction for each wheel
-THROTTLE_LEFT = 0.5  # 50% throttle
+THROTTLE_LEFT = 0.2  # 50% throttle
 DIRECTION_LEFT = 1  # forward
-THROTTLE_RIGHT = 0.5  # 30% throttle
+THROTTLE_RIGHT = 0.2  # 30% throttle
 DIRECTION_RIGHT = 1
 
 
@@ -61,7 +61,7 @@ class WheelControlNode(DTROS):
 
     def run(self):
         # publish 10 messages every second (10 Hz)
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(100)
 
         distance = 1.25
         distance_traveled = 0
@@ -74,7 +74,7 @@ class WheelControlNode(DTROS):
 
             if distance_traveled >= distance:
 
-                message = WheelsCmdStamped(vel_left=-0.5, vel_right=-0.5)
+                message = WheelsCmdStamped(vel_left=-self._vel_left, vel_right=-self._vel_right)
                 self._publisher.publish(message)
                 bool1 = True
             if distance_traveled <= 0 and bool1:

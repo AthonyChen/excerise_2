@@ -9,7 +9,7 @@ from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
 WHEEL_RADIUS = 0.0318  # meters (Duckiebot wheel radius)
 WHEEL_BASE = 0.05  # meters (distance between left and right wheels)
 TICKS_PER_ROTATION = 135  # Encoder ticks per full wheel rotation
-TURN_SPEED = 0.3  # Adjust speed for accuracy
+TURN_SPEED = 0.2  # Adjust speed for accuracy
 
 
 class Turn90Node(DTROS):
@@ -54,14 +54,31 @@ class Turn90Node(DTROS):
         else:
             self._ticks_right = data.data - self._ticks_right_init
 
+    def reset_encoders(self):
+        """ Reset encoder counters to track new movements """
+        self._ticks_left_init = None
+        self._ticks_right_init = None
+        self._ticks_left = None
+        self._ticks_right = None
+        # Wait for encoder data to reinitialize
+        rospy.loginfo("Resetting encoders...")
+        rate = rospy.Rate(10)
+        while not rospy.is_shutdown():
+            if self._ticks_left is not None and self._ticks_right is not None:
+                break
+            rate.sleep()
+        rospy.loginfo("Encoders reset complete.")
+
     def turn_90_degrees(self, direction=1):
         """
         Turns the Duckiebot 90 degrees in place.
         :param direction: 1 for left, -1 for right
         """
+        # Reset encoder counters before each turn
+        self.reset_encoders()
 
         # Compute required encoder ticks for 90-degree turn
-        ticks_needed = (WHEEL_BASE / (8 * WHEEL_RADIUS)) * TICKS_PER_ROTATION
+        ticks_needed = round((WHEEL_BASE / (8 * WHEEL_RADIUS)) * TICKS_PER_ROTATION) + 11
         rospy.loginfo(f"Ticks needed for 90-degree turn: {ticks_needed}")
 
         # Command wheels to rotate in opposite directions
@@ -72,7 +89,7 @@ class Turn90Node(DTROS):
         self._publisher.publish(turn_command)
 
         # Wait until the required ticks are reached
-        rate = rospy.Rate(10)  # 10 Hz loop
+        rate = rospy.Rate(100)  # 10 Hz loop
         while not rospy.is_shutdown():
             if self._ticks_left is not None and self._ticks_right is not None:
                 avg_ticks = (abs(self._ticks_left) + abs(self._ticks_right)) / 2
@@ -91,18 +108,16 @@ class Turn90Node(DTROS):
         rospy.sleep(1)  # Small delay to stabilize
 
     def run(self):
-        rospy.sleep(2)  # Give encoders time to initialize
-
-        # Step 1: Turn 90 degrees (Left)
-        self.turn_90_degrees(direction=1)
-
-        # Step 2: Stop briefly
+        # Allow time for encoders to initialize
         rospy.sleep(1)
 
-        # Step 3: Turn back to 0 degrees (Right)
+        # Turn left 90 degrees
+        self.turn_90_degrees(direction=1)
+
+        # Turn right 90 degrees to return to original position
         self.turn_90_degrees(direction=-1)
 
-        # Step 4: Stop the Duckiebot
+        # Shutdown
         self.stop_robot()
 
     def stop_robot(self):
@@ -111,15 +126,14 @@ class Turn90Node(DTROS):
         self._publisher.publish(stop_command)
         rospy.loginfo("Robot stopped.")
 
-        # Unsubscribe from topics to prevent lingering processes
+        # Unsubscribe from topics
         self.sub_left.unregister()
         self.sub_right.unregister()
 
-        # Shutdown ROS properly
         rospy.signal_shutdown("Task completed, shutting down.")
 
 
 if __name__ == '__main__':
-    node = Turn90Node(node_name='turn_90_node')
+    node = Turn90Node(node_name='90turn')
     node.run()
     rospy.spin()
