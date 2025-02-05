@@ -98,7 +98,7 @@ class ArcNode(DTROS):
 
 if __name__ == '__main__':
     # Create the node
-    node = ArcNode(node_name='arc_node')
+    node = ArcNode(node_name='arc')
     # Run the node
     node.run()
     # Keep the process from terminating
