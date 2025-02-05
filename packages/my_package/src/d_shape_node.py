@@ -3,6 +3,7 @@
 import rospy
 import rosbag
 import os
+import math
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
 from std_msgs.msg import String  # ✅ Now publishing LED commands
@@ -101,13 +102,13 @@ class DShapeNode(DTROS):
         cmd.vel_left = left_vel
         cmd.vel_right = right_vel
 
-        distance_traveled = (2 * 3.14159 * 0.0318 * self._ticks_left) / 135
+        distance_traveled = (2 * math.pi * 0.0318 * (self._ticks_left + self._ticks_right)/2 ) / 135
         distance = duration
         message = WheelsCmdStamped(vel_left=left_vel, vel_right=right_vel)
         self._publisher.publish(message)
         while not rospy.is_shutdown():
             if self._ticks_right is not None and self._ticks_left is not None:
-                distance_traveled = (2 * 3.14159 * 0.0318 * self._ticks_left) / 135
+                distance_traveled = (2 * math.pi * 0.0318 * (self._ticks_left + self._ticks_right)/2 ) / 135
 
             if distance_traveled >= distance:
 
@@ -173,15 +174,42 @@ class DShapeNode(DTROS):
         rospy.loginfo("State 2: Moving in D-shape")
         self.set_led("blue")  # ✅ Set LED to blue for moving
 
-        # Move forward 1 meter
+        # Move forward 1.2 m
         rospy.loginfo("Moving Forward")
         self.move_wheels(0.3, 0.3, 1.2)
 
-        # Semi-circle turn (Clockwise)
+        # Right turn 90 degrees
         rospy.loginfo("Turning in Semi-Circle")
         self.turn_90_degrees(1)
+
+        # Move forward 91cm
+        self.move_wheels(0.3,0.3,0.91)
+        
+        # arc
+        vel_right_arc = 0.3
+        arc_vel_ratio = 1.4166666666666667
+        arc_length = 0.4555
+        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+
+        # Move forward 61cm
+        self.move_wheels(0.3,0.3,0.61)
+
+        # arc
+        vel_right_arc = 0.3
+        arc_vel_ratio = 1.4166666666666667
+        arc_length = 0.4555
+        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+
+        # Right turn 90 degrees
+        rospy.loginfo("Turning in Semi-Circle")
+        self.turn_90_degrees(1)
+
+        # Move forward 91cm
         self.move_wheels(0.3,0.3,0.91)
 
+        # Right turn 90 degrees
+        rospy.loginfo("Turning in Semi-Circle")
+        self.turn_90_degrees(1)
 
         # State 3: Return to Start (Red)
         rospy.loginfo("State 3: Returning to Start")
