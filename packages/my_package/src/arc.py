@@ -98,7 +98,7 @@ class ArcNode(DTROS):
 
 if __name__ == '__main__':
     # Create the node
-    node = DriveDistanceNode(node_name='drive_distance_node')
+    node = ArcNode(node_name='arc_node')
     # Run the node
     node.run()
     # Keep the process from terminating
