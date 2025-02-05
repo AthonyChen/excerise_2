@@ -6,6 +6,7 @@ import os
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
 from std_msgs.msg import String  # ✅ Now publishing LED commands
+from srv import SetLed
 
 WHEEL_RADIUS = 0.0318  # meters (Duckiebot wheel radius)
 WHEEL_BASE = 0.05  # meters (distance between left and right wheels)
@@ -24,10 +25,7 @@ class DShapeNode(DTROS):
                                           queue_size=1)
 
         # Publisher for LED control ✅
-        self.pub_leds = rospy.Publisher(f'/{self._vehicle_name}/led_control', String, queue_size=1)
-
-        # Subscribers for wheel encoders
-
+        self.srv_leds = rospy.ServiceProxy('set_led', SetLed)
 
         # ROS Bag for odometry data
         #self.bag = rosbag.Bag('d_shape_odometry.bag', 'w')
@@ -91,12 +89,13 @@ class DShapeNode(DTROS):
 
     def set_led(self, color):
         """Publishes LED color changes to LEDNode."""
-        self.pub_leds.publish(color)
+        self.srv_leds(color)
         rospy.loginfo(f"Requested LED color change to {color}")
 
     def move_wheels(self, left_vel, right_vel, duration):
         """Actively publishes movement commands at a controlled rate."""
         rospy.loginfo(f"Moving: Left = {left_vel}, Right = {right_vel} for {duration} seconds")
+        self.reset_encoders()
 
         cmd = WheelsCmdStamped()
         cmd.vel_left = left_vel

@@ -2,8 +2,9 @@
 
 import rospy
 import os
-from duckietown_msgs.msg import LEDPattern, String  # ✅ Now listens for LED commands
+from duckietown_msgs.msg import LEDPattern  # ✅ Now listens for LED commands
 from std_msgs.msg import ColorRGBA
+from srv import SetLed, SetLedResponse
 
 color_map = {
     "red": [1.0, 0.0, 0.0],
@@ -22,7 +23,7 @@ def led_callback(msg):
     """
     Callback function to set LEDs based on received color command.
     """
-    color = msg.data.lower()
+    color = msg.color
 
     if color not in ["red", "blue"]:
         rospy.logwarn(f"Invalid color '{color}'. Only 'red' and 'blue' are supported.")
@@ -38,9 +39,10 @@ def led_callback(msg):
     pattern.rgb_vals = color_list  # Set all LEDs to the same color
     led_pub.publish(pattern)
     rospy.loginfo(f"LEDs set to {color}")
+    return SetLedResponse(True)
 
 if __name__ == '__main__':
     rospy.init_node('led_service_node')
-    s = rospy.Service('set_led', LEDPattern, led_callback)
+    s = rospy.Service('set_led', SetLed, led_callback)
     rospy.loginfo("LED pattern service is ready.")
     rospy.spin()
