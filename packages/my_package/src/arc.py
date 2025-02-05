@@ -13,10 +13,10 @@ DISTANCE_PER_TICK = (2 * math.pi * WHEEL_RADIUS) / TICKS_PER_REVOLUTION  # Dista
 
 TARGET_DISTANCE = 0.4555
 
-class DriveDistanceNode(DTROS):
+class ArcNode(DTROS):
 
     def __init__(self, node_name):
-        super(DriveDistanceNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
+        super(ArcNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
         
         self._vehicle_name = os.environ['VEHICLE_NAME']
         
