@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
+from time import sleep
 
 import rospy
-import rosbag
+import sys
 import os
 import math
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelsCmdStamped, WheelEncoderStamped
-from std_msgs.msg import String  # ✅ Now publishing LED commands
-# from srv import SetLed
+from my_package.srv import SetLed
 
 WHEEL_RADIUS = 0.0318  # meters (Duckiebot wheel radius)
 WHEEL_BASE = 0.05  # meters (distance between left and right wheels)
 TICKS_PER_ROTATION = 135  # Encoder ticks per full wheel rotation
-TURN_SPEED = 0.1  # Adjust speed for accuracy
+TURN_SPEED = 0.2  # Adjust speed for accuracy
 
 class DShapeNode(DTROS):
     def __init__(self):
@@ -26,7 +26,7 @@ class DShapeNode(DTROS):
                                           queue_size=1)
 
         # Publisher for LED control ✅
-        # self.srv_leds = rospy.ServiceProxy('set_led', SetLed)
+        self.srv_leds = rospy.ServiceProxy('set_led', SetLed)
 
         # ROS Bag for odometry data
         #self.bag = rosbag.Bag('d_shape_odometry.bag', 'w')
@@ -88,10 +88,10 @@ class DShapeNode(DTROS):
             rate.sleep()
         rospy.loginfo("Encoders reset complete.")
 
-    # def set_led(self, color):
-    #     """Publishes LED color changes to LEDNode."""
-    #     self.srv_leds(color)
-    #     rospy.loginfo(f"Requested LED color change to {color}")
+    def set_led(self, color):
+        """Publishes LED color changes to LEDNode."""
+        self.srv_leds(color)
+        rospy.loginfo(f"Requested LED color change to {color}")
 
     def move_wheels(self, left_vel, right_vel, duration):
         """Actively publishes movement commands at a controlled rate."""
@@ -163,50 +163,58 @@ class DShapeNode(DTROS):
         rospy.sleep(1)  # Small delay to stabilize
 
     def execute(self):
+        self.set_led("red")
+        sleep(5)
+
         rospy.loginfo("Starting D-Shape Execution...")
+        self.set_led("blue")
 
         # Move forward 1.2 m
         rospy.loginfo("Forward 1.2m")
-        self.move_wheels(0.3, 0.3, 1.2)
+        self.move_wheels(0.5, 0.5, 1.2)
 
         # Right turn 90 degrees
         rospy.loginfo("Right turn 90 degreees")
-        self.turn_90_degrees(1)
+        # self.turn_90_degrees(1)
 
         # Move forward 91cm
         rospy.loginfo("Forward 91cm")
-        self.move_wheels(0.3,0.3,0.91)
-        
+        # self.move_wheels(0.5,0.5,0.85)
+
         # arc
         rospy.loginfo("Arc right #1")
         vel_right_arc = 0.3
-        arc_vel_ratio = 1.4166666666666667
+        arc_vel_ratio = 2.0
         arc_length = 0.4555
-        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+        # self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
 
         # Move forward 61cm
         rospy.loginfo("Forward 61cm")
-        self.move_wheels(0.3,0.3,0.61)
+        # self.move_wheels(0.5,0.5,0.50)
 
         # arc
         rospy.loginfo("Arc right #2")
-        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+        # self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
 
         # Move forward 91cm
         rospy.loginfo("Forward 91cm")
-        self.move_wheels(0.3,0.3,0.91)
+        # self.move_wheels(0.5,0.5,0.85)
 
         # Right turn 90 degrees
         rospy.loginfo("Right turn 90 degrees")
-        self.turn_90_degrees(1)
+        # self.turn_90_degrees(1)
 
         # State 3: Return to Start (Red)
         rospy.loginfo("State 3: Returning to Start")
-        # self.set_led("red")  # ✅ Set LED back to red
+        sleep(5)
+        self.set_led("red")
 
         # Close the ROS bag
         #self.bag.close()
         rospy.loginfo("D-Shape Execution Completed!")
+
+        self.set_led("shutdown")
+        rospy.signal_shutdown("Task completed, shutting down.")
 
 
 if __name__ == '__main__':
