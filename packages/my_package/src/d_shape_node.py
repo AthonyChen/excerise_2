@@ -133,7 +133,7 @@ class DShapeNode(DTROS):
         self.reset_encoders()
 
         # Compute required encoder ticks for 90-degree turn
-        ticks_needed = round((WHEEL_BASE / (8 * WHEEL_RADIUS)) * TICKS_PER_ROTATION)
+        ticks_needed = round((WHEEL_BASE / (8 * WHEEL_RADIUS)) * TICKS_PER_ROTATION) + 11
         rospy.loginfo(f"Ticks needed for 90-degree turn: {ticks_needed}")
 
         # Command wheels to rotate in opposite directions
@@ -171,38 +171,38 @@ class DShapeNode(DTROS):
 
         # Move forward 1.2 m
         rospy.loginfo("Forward 1.2m")
-        self.move_wheels(0.5, 0.5, 1.2)
+        self.move_wheels(0.5, 0.5, 1.1)
 
         # Right turn 90 degrees
         rospy.loginfo("Right turn 90 degreees")
-        # self.turn_90_degrees(1)
+        self.turn_90_degrees(1)
 
         # Move forward 91cm
         rospy.loginfo("Forward 91cm")
-        # self.move_wheels(0.5,0.5,0.85)
+        self.move_wheels(0.5,0.5,0.80)
 
         # arc
         rospy.loginfo("Arc right #1")
         vel_right_arc = 0.3
-        arc_vel_ratio = 2.0
+        arc_vel_ratio = 2.5
         arc_length = 0.4555
-        # self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
 
         # Move forward 61cm
         rospy.loginfo("Forward 61cm")
-        # self.move_wheels(0.5,0.5,0.50)
+        self.move_wheels(0.5,0.5,0.50)
 
         # arc
         rospy.loginfo("Arc right #2")
-        # self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
+        self.move_wheels(vel_right_arc*arc_vel_ratio,vel_right_arc,arc_length)
 
         # Move forward 91cm
         rospy.loginfo("Forward 91cm")
-        # self.move_wheels(0.5,0.5,0.85)
+        self.move_wheels(0.5,0.5,0.80)
 
         # Right turn 90 degrees
         rospy.loginfo("Right turn 90 degrees")
-        # self.turn_90_degrees(1)
+        self.turn_90_degrees(1)
 
         # State 3: Return to Start (Red)
         rospy.loginfo("State 3: Returning to Start")
@@ -213,8 +213,8 @@ class DShapeNode(DTROS):
         #self.bag.close()
         rospy.loginfo("D-Shape Execution Completed!")
 
-        self.set_led("shutdown")
         rospy.signal_shutdown("Task completed, shutting down.")
+        self.set_led("shutdown")
 
 
 if __name__ == '__main__':

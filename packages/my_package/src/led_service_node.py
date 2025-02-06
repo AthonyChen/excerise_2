@@ -23,8 +23,9 @@ def led_callback(msg):
     color = msg.color
 
     if color == 'shutdown':
-        s.shutdown("Task completed, shutting down.")
-        return
+        s.shutdown("Task completed, shutting down service.")
+        rospy.signal_shutdown('Task completed, shutting down node.')
+        return SetLedResponse(False)
 
     if color not in ["red", "blue"]:
         rospy.logwarn(f"Invalid color '{color}'. Only 'red' and 'blue' are supported.")
