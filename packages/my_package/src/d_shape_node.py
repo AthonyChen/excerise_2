@@ -214,7 +214,11 @@ class DShapeNode(DTROS):
         rospy.loginfo("D-Shape Execution Completed!")
 
         rospy.signal_shutdown("Task completed, shutting down.")
-        self.set_led("shutdown")
+
+        try:
+            self.set_led("shutdown")
+        except rospy.service.ServiceException:
+            pass
 
 
 if __name__ == '__main__':
