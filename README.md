@@ -22,3 +22,6 @@ packages/my_package/src/my_subscriber_node.py is a subscriber node that listens 
 Launch it using
 $dts devel run -H ROBOT_NAME -L my-subscriber
 
+*./packages/my_package/src/camera_reader_node.py* is a subscriber node that subscribes to the topic /ROBOT_NAME/camera_node/image/compressed
+Launch it using $dts devel run -R ROBOT_NAME -L camera-reader -X
+
