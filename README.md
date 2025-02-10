@@ -31,7 +31,8 @@ dts devel run -H ROBOT_NAME -L my-subscriber
 
 ### Camera Reader Node
 📌 **File:** `packages/my_package/src/camera_reader_node.py`  
-📝 **Description:** This subscriber node subscribes to the topic `/ROBOT_NAME/camera_node/image/compressed` to receive camera images.
+📝 **Description:** This subscriber node subscribes to the topic `/ROBOT_NAME/camera_node/image/compressed` to receive camera images. This is the code to customize and annotate camera image
+
 
 ▶ **Launch Command:**
 ```bash
