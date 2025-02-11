@@ -110,7 +110,7 @@ class ReverseParkingNode(DTROS):
             if self._ticks_right is not None and self._ticks_left is not None:
                 distance_traveled = (2 * math.pi * 0.0318 * (self._ticks_left + self._ticks_right)/2 ) / 135
 
-            if distance_traveled >= distance:
+            if abs(distance_traveled) >= distance:
 
                 message = WheelsCmdStamped(vel_left=0, vel_right=0)
                 self._publisher.publish(message)
@@ -163,23 +163,25 @@ class ReverseParkingNode(DTROS):
         rospy.sleep(1)  # Small delay to stabilize
 
     def execute(self):
-        rospy.loginfo("Starting Reverse Parking Execution...")
-        # self.set_led("blue")
+        self.set_led("red")
+        sleep(5)
 
-        # arc
-        rospy.loginfo("Arc #1")
-        vel_outer = 0.3
-        arc_vel_ratio = 2.5
-        arc_length = 0.2
-        self.move_wheels(vel_outer*arc_vel_ratio,vel_outer,arc_length)
+        rospy.loginfo("Starting ReverseParking Execution...")
+        self.set_led("blue")
 
-        # arc
-        arc_vel_ratio = 2.5
-        arc_length = 0.2
-        rospy.loginfo("Arc #2")
-        self.move_wheels(vel_outer, vel_outer*arc_vel_ratio,arc_length)
+        # Move forward 0.2 m
+        rospy.loginfo("Forward 0.2m")
+        self.move_wheels(0.5, 0.5, 0.2)
 
-        rospy.loginfo("D-Shape Execution Completed!")
+        # Right turn 90 degrees
+        rospy.loginfo("Right turn 90 degreees")
+        self.turn_90_degrees(1)
+
+        # Move backward 10cm
+        rospy.loginfo("Backward 10cm")
+        self.move_wheels(-0.5,-0.5,0.1)
+
+        rospy.loginfo("ReverseParking Execution Completed!")
 
         rospy.signal_shutdown("Task completed, shutting down.")
 
