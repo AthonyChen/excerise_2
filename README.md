@@ -91,6 +91,28 @@ dts devel run -H ROBOT_NAME -L d-shape
 
 ---
 
+
+## Bonus: Reverse Parking
+
+📌 **File:** `packages/my_package/src/reverse_parking.py`  
+📝 **Description:** Control the duckiebot to reverse park into a parking stall
+
+### **State 1: Forward**
+- The robot moves forward
+
+### **State 2: Rotation**
+- Duckiebot turns 90 degrees in place
+
+### **State 3: Reverse**
+- Reverse the duckiebot into the stall
+
+▶ **Launch Command:**
+```bash
+dts devel run -H ROBOT_NAME -L reverse-parking
+```
+
+---
+
 ## 🚀 Running the Exercises
 Replace `ROBOT_NAME` with your actual robot's name in the commands.
 
