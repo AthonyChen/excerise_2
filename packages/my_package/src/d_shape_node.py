@@ -106,6 +106,7 @@ class DShapeNode(DTROS):
         distance = duration
         message = WheelsCmdStamped(vel_left=left_vel, vel_right=right_vel)
         self._publisher.publish(message)
+        rate = rospy.Rate(100)
         while not rospy.is_shutdown():
             if self._ticks_right is not None and self._ticks_left is not None:
                 distance_traveled = (2 * math.pi * 0.0318 * (self._ticks_left + self._ticks_right)/2 ) / 135
@@ -115,8 +116,12 @@ class DShapeNode(DTROS):
                 message = WheelsCmdStamped(vel_left=0, vel_right=0)
                 self._publisher.publish(message)
                 break
+
             rospy.loginfo(distance_traveled)
             rospy.loginfo(self._ticks_left)
+
+            self._publisher.publish(message)
+            rate.sleep()
 
         # Stop the robot after moving
         rospy.loginfo("Stopping robot")
