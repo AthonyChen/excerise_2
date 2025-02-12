@@ -117,4 +117,14 @@ dts devel run -H ROBOT_NAME -L reverse-parking
 Replace `ROBOT_NAME` with your actual robot's name in the commands.
 
 Happy coding! 🤖🎯
+
+## Plotting the Bag Files
+📌 **File:** `packages/my_package/bag/plot-xy.py`  
+📝 **Description:** Extracts velocities of the left and right wheels, calculates the trajectory of the Duckiebot using
+forward kinematics, and plots the trajectory using `matplotlib`.
+
+▶ **Example Usage:**
+```bash
+python3 plot-xy.py <BAG_FILE>
 ```
+Replace `<BAG_FILE>` with the desired ROS bag file. 
